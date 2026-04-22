@@ -2,9 +2,11 @@
 
 import { sampleTrackers } from '@daily-tracker/core'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 export default function CalendarPage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date())
+  const router = useRouter()
   const trackers = sampleTrackers
 
   const daysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
@@ -26,6 +28,27 @@ export default function CalendarPage() {
     }
     
     return days
+  }
+
+  const calculateCompletionPercentage = (day: number | null): number => {
+    if (!day) return 0
+    // Simple calculation: random for demo, in production would query actual data
+    return Math.floor(Math.random() * 100)
+  }
+
+  const getCompletionColor = (percentage: number): string => {
+    if (percentage === 0) return 'transparent'
+    if (percentage < 30) return '#ff4757'
+    if (percentage < 60) return '#ffa502'
+    if (percentage < 100) return '#2ed573'
+    return '#1e90ff'
+  }
+
+  const handleDayClick = (day: number | null) => {
+    if (!day) return
+    const date = new Date(selectedMonth.getFullYear(), selectedMonth.getMonth(), day)
+    const dateString = date.toISOString().split('T')[0]
+    router.push(`/habits?date=${dateString}`)
   }
 
   const handlePrevMonth = () => {
@@ -65,14 +88,46 @@ export default function CalendarPage() {
           </div>
 
           <div className="calendar-days">
-            {days.map((day, idx) => (
-              <div
-                key={idx}
-                className={`calendar-day ${day ? 'active' : 'empty'} ${day === new Date().getDate() ? 'today' : ''}`}
-              >
-                {day}
-              </div>
-            ))}
+            {days.map((day, idx) => {
+              const completion = calculateCompletionPercentage(day)
+              const completionColor = getCompletionColor(completion)
+              return (
+                <div
+                  key={idx}
+                  className={`calendar-day ${day ? 'active' : 'empty'} ${day === new Date().getDate() ? 'today' : ''}`}
+                  onClick={() => handleDayClick(day)}
+                  style={day ? {
+                    borderWidth: '3px',
+                    borderStyle: 'solid',
+                    borderColor: completionColor,
+                    cursor: 'pointer',
+                    position: 'relative'
+                  } : {}}
+                  title={day ? `${completion}% complete` : ''}
+                >
+                  {day}
+                  {day && completion > 0 && (
+                    <span className="completion-badge" style={{
+                      position: 'absolute',
+                      top: '2px',
+                      right: '2px',
+                      fontSize: '10px',
+                      fontWeight: 'bold',
+                      backgroundColor: completionColor,
+                      color: 'white',
+                      borderRadius: '50%',
+                      width: '20px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      {completion}%
+                    </span>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
 

@@ -61,12 +61,15 @@ body { min-height: 100vh; }
 
 /* Habits List */
 .habits-list { display: flex; flex-direction: column; gap: 12px; }
-.habit-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; display: flex; justify-content: space-between; align-items: center; box-shadow: var(--shadow); transition: all 0.2s; }
+.habit-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; display: flex; align-items: center; gap: 16px; box-shadow: var(--shadow); transition: all 0.2s; cursor: pointer; }
 .habit-item:hover { transform: translateY(-2px); box-shadow: 0 20px 50px rgba(16, 24, 40, 0.12); }
+.habit-item.completed { border-color: var(--primary); background: rgba(15, 118, 110, 0.05); }
+.habit-checkbox { width: 24px; height: 24px; cursor: pointer; accent-color: var(--primary); flex-shrink: 0; }
+.habit-label { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex: 1; cursor: pointer; }
 .habit-info { flex: 1; }
 .habit-title { font-size: 1.1rem; margin: 6px 0 8px; }
 .habit-meta { color: var(--muted); font-size: 0.95rem; }
-.habit-stats { display: flex; gap: 32px; }
+.habit-stats { display: flex; gap: 32px; flex-shrink: 0; }
 .stat-box { display: flex; flex-direction: column; align-items: center; padding: 12px 20px; background: var(--primary-soft); border-radius: 12px; }
 .stat-label { font-size: 0.8rem; color: var(--muted); text-transform: uppercase; }
 .stat-value { font-size: 1.6rem; font-weight: 700; color: var(--primary); }
@@ -99,8 +102,9 @@ body { min-height: 100vh; }
   .stats-grid, .tracker-grid { grid-template-columns: 1fr; }
   .hero { flex-direction: column; }
   .hero h1 { max-width: 100%; }
-  .habit-item { flex-direction: column; align-items: flex-start; }
-  .habit-stats { align-self: stretch; width: 100%; }
+  .habit-item { flex-wrap: wrap; }
+  .habit-label { flex-direction: column; align-items: flex-start; width: 100%; }
+  .habit-stats { align-self: stretch; width: 100%; justify-content: flex-start; }
   .calendar-section { padding: 20px; }
   .habits-mini-list { grid-template-columns: 1fr; }
 }
