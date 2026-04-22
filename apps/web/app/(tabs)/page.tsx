@@ -30,7 +30,7 @@ export default function HomePage() {
 
       <section className="section-head">
         <div>
-          <p className="eyebrow">can Today</p>
+          <p className="eyebrow">Today</p>
           <h2>Your active trackers</h2>
         </div>
       </section>
