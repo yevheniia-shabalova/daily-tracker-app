@@ -48,17 +48,7 @@ export function HabitsProvider({ children }: HabitsProviderProps) {
 
         // Load habits
         const savedHabits = await database.getHabits()
-        if (savedHabits.length > 0) {
-          setHabits(savedHabits)
-        } else {
-          // Initialize with sample data if no saved data
-          const { sampleTrackers } = await import('@daily-tracker/core')
-          setHabits(sampleTrackers)
-          // Save sample data to database
-          for (const tracker of sampleTrackers) {
-            await database.addHabit(tracker)
-          }
-        }
+        setHabits(savedHabits)
 
         // Load categories
         const savedCategories = await database.getCategories()

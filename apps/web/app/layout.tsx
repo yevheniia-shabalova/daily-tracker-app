@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { HabitsProvider } from '@/components/habits-context'
+import { ThemeProvider } from '@/components/theme-context'
 
 export const metadata: Metadata = {
   title: 'Daily Tracker',
@@ -12,9 +13,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <HabitsProvider>
-          {children}
-        </HabitsProvider>
+        <ThemeProvider>
+          <HabitsProvider>
+            {children}
+          </HabitsProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

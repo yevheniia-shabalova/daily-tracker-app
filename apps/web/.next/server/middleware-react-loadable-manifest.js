@@ -1,1 +1,1 @@
-self.__REACT_LOADABLE_MANIFEST="{\"components/habits-context.tsx -> @daily-tracker/core\":{\"id\":\"components/habits-context.tsx -> @daily-tracker/core\",\"files\":[\"static/chunks/_app-pages-browser_packages_core_src_index_ts.js\"]}}"
+self.__REACT_LOADABLE_MANIFEST="{}"

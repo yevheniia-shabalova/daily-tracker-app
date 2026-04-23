@@ -1,8 +1,1 @@
-{
-  "components/habits-context.tsx -> @daily-tracker/core": {
-    "id": "components/habits-context.tsx -> @daily-tracker/core",
-    "files": [
-      "static/chunks/_app-pages-browser_packages_core_src_index_ts.js"
-    ]
-  }
-}
+{}

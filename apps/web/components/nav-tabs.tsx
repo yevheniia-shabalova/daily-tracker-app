@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { ThemeToggle } from './theme-toggle'
 
 type Tab = { label: string; href: string; id: string }
 
@@ -28,6 +29,9 @@ export function NavTabs() {
             {tab.label}
           </Link>
         ))}
+        <div style={{ marginLeft: 'auto' }}>
+          <ThemeToggle />
+        </div>
       </div>
     </nav>
   )

@@ -39,7 +39,6 @@ export default function HomePage() {
             Track habits, routines, mood, water, workouts, reading, and custom goals in one calm dashboard.
           </p>
         </div>
-        <ThemeToggle />
       </section>
 
       <section className="stats-grid">
