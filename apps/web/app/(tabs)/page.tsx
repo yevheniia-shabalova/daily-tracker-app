@@ -34,8 +34,7 @@ export default function HomePage() {
     <main className="page-shell">
       <section className="hero">
         <div>
-          <p className="eyebrow">Daily tracker</p>
-          <h1>Stay consistent without making your day feel crowded.</h1>
+          <h1>Daily tracker</h1>
           <p className="hero-copy">
             Track habits, routines, mood, water, workouts, reading, and custom goals in one calm dashboard.
           </p>

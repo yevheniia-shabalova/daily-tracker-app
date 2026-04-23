@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import type { Tracker, TrackerCategory } from '@daily-tracker/core'
+import { getDatabase } from '../lib/db'
+import type { IDatabase } from '../lib/db'
 
 interface HabitsContextType {
   habits: Tracker[]
@@ -31,46 +33,127 @@ interface HabitsProviderProps {
 }
 
 export function HabitsProvider({ children }: HabitsProviderProps) {
+  const [db, setDb] = useState<IDatabase | null>(null)
   const [habits, setHabits] = useState<Tracker[]>([])
   const [categories, setCategories] = useState<TrackerCategory[]>(['Health', 'Mind', 'Fitness', 'Lifestyle'])
   const [completions, setCompletions] = useState<Record<string, Record<string, boolean>>>({})
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  // Load from localStorage on mount
+  // Initialize database and load data on mount
   useEffect(() => {
-    const savedHabits = localStorage.getItem('daily-tracker-habits')
-    const savedCategories = localStorage.getItem('daily-tracker-categories')
-    const savedCompletions = localStorage.getItem('daily-tracker-completions')
+    const initializeDB = async () => {
+      try {
+        const database = await getDatabase()
+        setDb(database)
 
-    if (savedHabits) {
-      setHabits(JSON.parse(savedHabits))
-    } else {
-      // Initialize with sample data if no saved data
-      import('@daily-tracker/core').then(({ sampleTrackers }) => {
-        setHabits(sampleTrackers)
-      })
+        // Load habits
+        const savedHabits = await database.getHabits()
+        if (savedHabits.length > 0) {
+          setHabits(savedHabits)
+        } else {
+          // Initialize with sample data if no saved data
+          const { sampleTrackers } = await import('@daily-tracker/core')
+          setHabits(sampleTrackers)
+          // Save sample data to database
+          for (const tracker of sampleTrackers) {
+            await database.addHabit(tracker)
+          }
+        }
+
+        // Load categories
+        const savedCategories = await database.getCategories()
+        setCategories(savedCategories)
+
+        // Load completions
+        const savedCompletions = await database.getCompletions()
+        setCompletions(savedCompletions)
+
+        setIsLoaded(true)
+      } catch (error) {
+        console.error('Failed to initialize database:', error)
+        setIsLoaded(true)
+      }
     }
 
-    if (savedCategories) {
-      setCategories(JSON.parse(savedCategories))
-    }
-
-    if (savedCompletions) {
-      setCompletions(JSON.parse(savedCompletions))
-    }
+    initializeDB()
   }, [])
 
-  // Save to localStorage whenever data changes
+  // Save habits to database whenever they change
   useEffect(() => {
-    localStorage.setItem('daily-tracker-habits', JSON.stringify(habits))
-  }, [habits])
+    if (!db || !isLoaded) return
 
-  useEffect(() => {
-    localStorage.setItem('daily-tracker-categories', JSON.stringify(categories))
-  }, [categories])
+    const saveHabits = async () => {
+      try {
+        // Clear existing habits and save new ones
+        const existingHabits = await db.getHabits()
+        for (const habit of existingHabits) {
+          if (!habits.find(h => h.id === habit.id)) {
+            await db.deleteHabit(habit.id)
+          }
+        }
 
+        for (const habit of habits) {
+          const existing = existingHabits.find(h => h.id === habit.id)
+          if (existing) {
+            await db.updateHabit(habit.id, habit)
+          } else {
+            await db.addHabit(habit)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to save habits:', error)
+      }
+    }
+
+    saveHabits()
+  }, [habits, db, isLoaded])
+
+  // Save categories to database whenever they change
   useEffect(() => {
-    localStorage.setItem('daily-tracker-completions', JSON.stringify(completions))
-  }, [completions])
+    if (!db || !isLoaded) return
+
+    const saveCategories = async () => {
+      try {
+        await db.setCategories(categories)
+      } catch (error) {
+        console.error('Failed to save categories:', error)
+      }
+    }
+
+    saveCategories()
+  }, [categories, db, isLoaded])
+
+  // Save completions to database whenever they change
+  useEffect(() => {
+    if (!db || !isLoaded) return
+
+    const saveCompletions = async () => {
+      try {
+        // Get existing completions and compare
+        const existingCompletions = await db.getCompletions()
+        
+        // Update changed completions
+        for (const [date, dateCompletions] of Object.entries(completions)) {
+          for (const [habitId, completed] of Object.entries(dateCompletions)) {
+            await db.updateCompletion(date, habitId, completed)
+          }
+        }
+
+        // Remove completions for deleted habits
+        for (const [date, dateCompletions] of Object.entries(existingCompletions)) {
+          for (const habitId of Object.keys(dateCompletions)) {
+            if (!habits.find(h => h.id === habitId)) {
+              await db.deleteCompletionsForHabit(habitId)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to save completions:', error)
+      }
+    }
+
+    saveCompletions()
+  }, [completions, db, isLoaded, habits])
 
   const addHabit = (habitData: Omit<Tracker, 'id'>) => {
     const newHabit: Tracker = {
@@ -98,6 +181,13 @@ export function HabitsProvider({ children }: HabitsProviderProps) {
       })
       return newCompletions
     })
+    
+    // Delete from database
+    if (db) {
+      db.deleteCompletionsForHabit(id).catch(error => {
+        console.error('Failed to delete habit completions from database:', error)
+      })
+    }
   }
 
   const addCategory = (category: TrackerCategory) => {
