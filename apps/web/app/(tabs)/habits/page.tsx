@@ -1,14 +1,19 @@
 'use client'
 
-import { sampleTrackers } from '@daily-tracker/core'
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { useHabits } from '../../components/habits-context'
+import { Modal } from '../../components/modal'
+import { HabitForm } from '../../components/habit-form'
+import { CategoryManager } from '../../components/category-manager'
+import type { Tracker } from '@daily-tracker/core'
 
 export default function HabitsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
+  const { habits, toggleHabitCompletion, getHabitsForDate } = useHabits()
   const dateParam = searchParams.get('date')
-  
+
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     if (dateParam) {
       return new Date(dateParam)
@@ -16,48 +21,40 @@ export default function HabitsPage() {
     return new Date()
   })
 
-  // Generate mock data for a specific date to show different values for different days
-  const getDataForDate = (date: Date): Record<string, boolean> => {
-    const dateString = date.toISOString().split('T')[0]
-    // Use date as seed for consistent but different data per date
-    const dateHash = dateString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-    
-    return {
-      water: (dateHash % 3) === 0,
-      walk: (dateHash % 4) === 1,
-      read: (dateHash % 5) === 2,
-      journal: (dateHash % 7) === 3,
-    }
-  }
-
-  const trackers = sampleTrackers
   const [completedHabits, setCompletedHabits] = useState<Record<string, boolean>>(
-    getDataForDate(selectedDate)
+    getHabitsForDate(selectedDate.toISOString().split('T')[0])
   )
+
+  const [showHabitModal, setShowHabitModal] = useState(false)
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
+  const [editingHabit, setEditingHabit] = useState<Tracker | undefined>()
 
   useEffect(() => {
     if (dateParam) {
       const newDate = new Date(dateParam)
       setSelectedDate(newDate)
-      setCompletedHabits(getDataForDate(newDate))
+      setCompletedHabits(getHabitsForDate(newDate.toISOString().split('T')[0]))
     } else {
       // Reset to today when no date parameter
       const today = new Date()
       setSelectedDate(today)
-      setCompletedHabits(getDataForDate(today))
+      setCompletedHabits(getHabitsForDate(today.toISOString().split('T')[0]))
     }
-  }, [dateParam])
+  }, [dateParam, getHabitsForDate])
 
   const toggleHabit = (habitId: string) => {
-    setCompletedHabits((prev) => ({
+    const dateKey = selectedDate.toISOString().split('T')[0]
+    toggleHabitCompletion(habitId, dateKey)
+    setCompletedHabits(prev => ({
       ...prev,
       [habitId]: !prev[habitId],
     }))
   }
 
   const calculateCompletionPercentage = (): number => {
+    if (habits.length === 0) return 0
     const completed = Object.values(completedHabits).filter(Boolean).length
-    return Math.round((completed / trackers.length) * 100)
+    return Math.round((completed / habits.length) * 100)
   }
 
   const getFormattedDate = (): string => {
@@ -73,6 +70,22 @@ export default function HabitsPage() {
 
   const goBackToToday = () => {
     router.push('/habits')
+  }
+
+  const handleAddHabit = () => {
+    setEditingHabit(undefined)
+    setShowHabitModal(true)
+  }
+
+  const handleEditHabit = (habit: Tracker) => {
+    setEditingHabit(habit)
+    setShowHabitModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowHabitModal(false)
+    setShowCategoryModal(false)
+    setEditingHabit(undefined)
   }
 
   return (
@@ -92,9 +105,31 @@ export default function HabitsPage() {
               {isToday && <span style={{ marginLeft: '8px', color: '#1e90ff' }}>(Today)</span>}
             </p>
           </div>
-          {!isToday && (
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
             <button
-              onClick={goBackToToday}
+              onClick={() => setShowCategoryModal(true)}
+              style={{
+                padding: '8px 16px',
+                backgroundColor: '#6b7280',
+                color: 'white',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#4b5563'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#6b7280'
+              }}
+            >
+              Manage Labels
+            </button>
+            <button
+              onClick={handleAddHabit}
               style={{
                 padding: '8px 16px',
                 backgroundColor: '#1e90ff',
@@ -105,7 +140,6 @@ export default function HabitsPage() {
                 fontSize: '14px',
                 fontWeight: '500',
                 whiteSpace: 'nowrap',
-                marginTop: '4px'
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#0070cc'
@@ -114,9 +148,34 @@ export default function HabitsPage() {
                 e.currentTarget.style.backgroundColor = '#1e90ff'
               }}
             >
-              Back to Today
+              Add Habit
             </button>
-          )}
+            {!isToday && (
+              <button
+                onClick={goBackToToday}
+                style={{
+                  padding: '8px 16px',
+                  backgroundColor: '#1e90ff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  whiteSpace: 'nowrap',
+                  marginTop: '4px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0070cc'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#1e90ff'
+                }}
+              >
+                Back to Today
+              </button>
+            )}
+          </div>
         </div>
         <p className="hero-copy">Check off habits. Visit Calendar to select a different day.</p>
       </section>
@@ -139,47 +198,96 @@ export default function HabitsPage() {
           {calculateCompletionPercentage()}%
         </div>
         <p style={{ fontSize: '14px', color: '#666', marginTop: '8px' }}>
-          {Object.values(completedHabits).filter(Boolean).length} of {trackers.length} completed
+          {Object.values(completedHabits).filter(Boolean).length} of {habits.length} completed
         </p>
       </section>
 
       <section className="habits-list">
-        {trackers.map((tracker) => {
-          const isCompleted = completedHabits[tracker.id]
-          
-          return (
-            <div key={tracker.id} className={`habit-item ${isCompleted ? 'completed' : ''}`}>
-              <input
-                type="checkbox"
-                id={`habit-${tracker.id}`}
-                checked={isCompleted}
-                onChange={() => toggleHabit(tracker.id)}
-                className="habit-checkbox"
-                aria-label={`Mark ${tracker.name} as completed`}
-              />
-              <label htmlFor={`habit-${tracker.id}`} className="habit-label">
-                <div className="habit-info">
-                  <p className="eyebrow">{tracker.category}</p>
-                  <h3 className="habit-title">{tracker.name}</h3>
-                  <p className="habit-meta">Target: {tracker.targetPerDay} {tracker.unit} per day</p>
-                </div>
-                <div className="habit-stats">
-                  <div className="stat-box">
-                    <span className="stat-label">Streak</span>
-                    <span className="stat-value">{tracker.streak}</span>
-                    <span className="stat-unit">days</span>
+        {habits.length === 0 ? (
+          <div style={{
+            textAlign: 'center',
+            padding: '40px',
+            color: 'var(--muted)',
+            background: 'var(--surface-2)',
+            borderRadius: 'var(--radius)',
+          }}>
+            <p style={{ fontSize: '18px', marginBottom: '8px' }}>No habits yet</p>
+            <p style={{ marginBottom: '20px' }}>Create your first habit to start tracking your daily progress.</p>
+            <button
+              onClick={handleAddHabit}
+              style={{
+                padding: '12px 24px',
+                backgroundColor: 'var(--primary)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '16px',
+                fontWeight: '500',
+              }}
+            >
+              Add Your First Habit
+            </button>
+          </div>
+        ) : (
+          habits.map((tracker) => {
+            const isCompleted = completedHabits[tracker.id] || false
+
+            return (
+              <div key={tracker.id} className={`habit-item ${isCompleted ? 'completed' : ''}`}>
+                <input
+                  type="checkbox"
+                  id={`habit-${tracker.id}`}
+                  checked={isCompleted}
+                  onChange={() => toggleHabit(tracker.id)}
+                  className="habit-checkbox"
+                  aria-label={`Mark ${tracker.name} as completed`}
+                />
+                <label
+                  htmlFor={`habit-${tracker.id}`}
+                  className="habit-label"
+                  onClick={() => handleEditHabit(tracker)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <div className="habit-info">
+                    <p className="eyebrow">{tracker.category}</p>
+                    <h3 className="habit-title">{tracker.name}</h3>
+                    <p className="habit-meta">Target: {tracker.targetPerDay} {tracker.unit} per day</p>
                   </div>
-                  <div className="stat-box">
-                    <span className="stat-label">Completed</span>
-                    <span className="stat-value">{tracker.completedToday}</span>
-                    <span className="stat-unit">{tracker.unit}</span>
+                  <div className="habit-stats">
+                    <div className="stat-box">
+                      <span className="stat-label">Streak</span>
+                      <span className="stat-value">{tracker.streak}</span>
+                      <span className="stat-unit">days</span>
+                    </div>
+                    <div className="stat-box">
+                      <span className="stat-label">Completed</span>
+                      <span className="stat-value">{tracker.completedToday}</span>
+                      <span className="stat-unit">{tracker.unit}</span>
+                    </div>
                   </div>
-                </div>
-              </label>
-            </div>
-          )
-        })}
+                </label>
+              </div>
+            )
+          })
+        )}
       </section>
+
+      <Modal
+        isOpen={showHabitModal}
+        onClose={handleCloseModal}
+        title={editingHabit ? 'Edit Habit' : 'Add New Habit'}
+      >
+        <HabitForm habit={editingHabit} onClose={handleCloseModal} />
+      </Modal>
+
+      <Modal
+        isOpen={showCategoryModal}
+        onClose={handleCloseModal}
+        title="Manage Categories"
+      >
+        <CategoryManager />
+      </Modal>
     </main>
   )
 }
