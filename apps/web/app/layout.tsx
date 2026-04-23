@@ -1,6 +1,6 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { HabitsProvider } from '../components/habits-context'
+import { HabitsProvider } from '@/components/habits-context'
 
 export const metadata: Metadata = {
   title: 'Daily Tracker',

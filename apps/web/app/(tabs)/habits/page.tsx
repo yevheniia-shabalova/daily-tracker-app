@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { useHabits } from '../../components/habits-context'
-import { Modal } from '../../components/modal'
-import { HabitForm } from '../../components/habit-form'
-import { CategoryManager } from '../../components/category-manager'
+import { useHabits } from '@/components/habits-context'
+import { Modal } from '@/components/modal'
+import { HabitForm } from '@/components/habit-form'
+import { CategoryManager } from '@/components/category-manager'
 import type { Tracker } from '@daily-tracker/core'
 
 export default function HabitsPage() {
